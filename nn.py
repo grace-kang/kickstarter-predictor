@@ -6,8 +6,7 @@ import torch.nn.functional as F
 from sklearn.model_selection import train_test_split
 from torch.autograd import Variable
 
-
-MAX_EPOCH = 10
+MAX_EPOCH = 100
 
 class Classifier(nn.Module):
 	def __init__(self):
@@ -36,7 +35,7 @@ def percentage_correct(pred, labels, threshold = 0.5):
 	return correct/total
 		
 ## Getting the Data Ready ##
-dataset = pandas.read_csv('kickstarter_data_full.csv')
+dataset = pandas.read_csv('kickstarter_data_full.csv', low_memory = False)
 data = dataset[[
 	'disable_communication',
 	'country',
@@ -45,11 +44,11 @@ data = dataset[[
 	'static_usd_rate',
 	'category',
 	'spotlight',
-	'successfulbool'
+	'SuccessfulBool'
 ]].dropna().reset_index(drop = True)
 
 Y = data.iloc[0:int(data.size / 8), 7].as_matrix()
-X = data.iloc[0:int(data.size / 8), data.columns != 'successfulbool'].as_matrix()
+X = data.iloc[0:int(data.size / 8), data.columns != 'SuccessfulBool'].as_matrix()
 
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size = 0.2, random_state = 0)
 
@@ -65,23 +64,23 @@ test_labels = Variable(y_test)
 
 ## Training the Model ##
 model = Classifier()
-optimizer = torch.optim.SGD(model.parameters(), lr = 0.1)
+optimizer = torch.optim.SGD(model.parameters(), lr = 0.05)
 loss = nn.BCELoss()
 
 b_size = 100 #batch size
 for epoch in range(MAX_EPOCH):
     model.train()
     for batch in range(0,train_data.size(0),b_size):
-        pred = model(train_data[batch:batch+b_size])
-        error = loss(pred, train_labels[batch:batch+b_size])
+        d = train_data[batch:batch+b_size];
+        l = train_labels[batch:batch+b_size]
+        pred = model(d).view(len(l))
+        error = loss(pred, l)
         optimizer.zero_grad()
         error.backward()
-        #print("\t[training batch {:3d}/{:3d}]".format(int(batch/b_size), int(train_data.size(0)/b_size)),error.data[0])
         optimizer.step()
-    print("#"*64+"\nAccuracy")
-    model.eval()
-    pred = model(test_data)
-    error = loss(pred, test_labels)
-    #print("EPOCH: ",epoch, error.data[0])
-    print(percentage_correct(pred, test_labels))
-    print("#"*64)
+    
+model.eval()
+pred = model(test_data).view(len(test_labels))
+error = loss(pred, test_labels)
+print("Final Accuracy")
+print(percentage_correct(pred, test_labels))
