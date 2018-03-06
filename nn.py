@@ -11,14 +11,10 @@ MAX_EPOCH = 100
 class Classifier(nn.Module):
     def __init__(self):
         super(Classifier, self).__init__()
-        self.l1 = nn.Linear(7,77)
-        self.l2 = nn.Linear(77,2)
-        self.l3 = nn.Linear(2,1)
+        self.l1 = nn.Linear(7,1)
 		
     def forward(self, x):
         x = F.relu(self.l1(x))
-        x = F.relu(self.l2(x))
-        x = F.relu(self.l3(x))
         return x
 
 def percentage_correct(pred, labels, threshold = 0.5):
@@ -36,7 +32,7 @@ def percentage_correct(pred, labels, threshold = 0.5):
 			if (converted_pred[i] == labels[i].data[0]):
 				correct += 1
 			total += 1
-	return correct/total
+	return correct/total, correct, total
 		
 ## Importing Data ##
 dataset = pandas.read_csv('kickstarter_data_full.csv', low_memory = False)
@@ -77,7 +73,7 @@ test_labels = Variable(y_test)
 
 ## Training the Model ##
 model = Classifier()
-optimizer = torch.optim.SGD(model.parameters(), lr = 0.03, momentum=0.9)
+optimizer = torch.optim.RMSprop(model.parameters(), lr = 0.003)
 loss = nn.BCEWithLogitsLoss()
 
 accuracies = []
@@ -98,7 +94,10 @@ for epoch in range(MAX_EPOCH):
 model.eval()
 pred = model(test_data).view(len(test_labels))
 error = loss(pred, test_labels)
+acc, cor, tot = percentage_correct(pred, test_labels)
 print("===================================")
 print("Final Accuracy")
-print(percentage_correct(pred, test_labels))
+print(acc)
+print("Correct Predictions: ", cor)
+print("Total Test Labels: ", tot)
 print("===================================")
