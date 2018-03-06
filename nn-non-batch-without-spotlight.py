@@ -6,16 +6,18 @@ import torch.nn.functional as F
 from sklearn.model_selection import train_test_split
 from torch.autograd import Variable
 
-MAX_EPOCH = 3000
+MAX_EPOCH = 1000
 
 class Classifier(nn.Module):
     def __init__(self):
         super(Classifier, self).__init__()
-        self.l1 = nn.Linear(6,1)
+        self.l1 = nn.Linear(6,5)
+        self.l2 = nn.Linear(5,1)
 		
     def forward(self, x):
-        x = F.sigmoid(self.l1(x))
-        return x
+    	x = F.relu(self.l1(x))
+    	x = F.sigmoid(self.l2(x))
+    	return x
 
 def percentage_correct(pred, labels, threshold = 0.5):
 	correct = 0
@@ -43,14 +45,14 @@ data = dataset[[
 	'staff_pick',
 	'static_usd_rate',
 	'category',
-#	'spotlight',
+	# 'spotlight',
 	'SuccessfulBool'
 ]].dropna().reset_index(drop = True)
 
 ## Converting Categorical Columns to Integers and Bools to 0/1 ##
 data['disable_communication'] = (data['disable_communication']).astype(int)
 data['staff_pick'] = (data['staff_pick']).astype(int)
-#data['spotlight'] = (data['spotlight']).astype(int)
+# data['spotlight'] = (data['spotlight']).astype(int)
 data['country'] = (data['country']).astype('category').cat.codes
 data['currency'] = (data['currency']).astype('category').cat.codes
 data['category'] = (data['category']).astype('category').cat.codes
@@ -74,7 +76,7 @@ test_labels = Variable(y_test)
 ## Training the Model ##
 model = Classifier()
 optimizer = torch.optim.RMSprop(model.parameters(), lr = 0.003)
-loss = nn.BCEWithLogitsLoss()
+loss = nn.BCELoss()
 errors = []
 
 for epoch in range(MAX_EPOCH):
@@ -102,6 +104,8 @@ print("Correct Predictions: ", cor)
 print("Total Test Labels: ", tot)
 print("===================================")
 
+import matplotlib as mpl 
+mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 plt.plot(errors)
 plt.show()
