@@ -5,8 +5,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.model_selection import train_test_split
 from torch.autograd import Variable
+from sklearn.preprocessing import normalize
 
-MAX_EPOCH = 1000
+MAX_EPOCH = 5000
 
 class Classifier(nn.Module):
     def __init__(self):
@@ -16,7 +17,7 @@ class Classifier(nn.Module):
 		
     def forward(self, x):
     	x = F.relu(self.l1(x))
-    	x = F.sigmoid(self.l2(x))
+    	x = self.l2(x)
     	return x
 
 def percentage_correct(pred, labels, threshold = 0.5):
@@ -61,7 +62,9 @@ data['category'] = (data['category']).astype('category').cat.codes
 Y = data.iloc[0:int(data.size / 7), 6].as_matrix()
 X = data.iloc[0:int(data.size / 7), data.columns != 'SuccessfulBool'].as_matrix()
 
-X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size = 0.2, random_state = 42)
+X_normalized = normalize(X, norm='l2')
+
+X_train, X_test, y_train, y_test = train_test_split(X_normalized, Y, test_size = 0.2, random_state = 42)
 
 X_train = torch.Tensor(X_train)
 X_test = torch.Tensor(X_test)
@@ -76,7 +79,7 @@ test_labels = Variable(y_test)
 ## Training the Model ##
 model = Classifier()
 optimizer = torch.optim.RMSprop(model.parameters(), lr = 0.003)
-loss = nn.BCELoss()
+loss = nn.BCEWithLogitsLoss()
 errors = []
 
 for epoch in range(MAX_EPOCH):
