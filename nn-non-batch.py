@@ -104,4 +104,7 @@ print("===================================")
 
 import matplotlib.pyplot as plt
 plt.plot(errors)
+plt.title("Error per Epoch")
+plt.xlabel("Epochs")
+plt.ylabel("Error")
 plt.show()
