@@ -5,17 +5,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.model_selection import train_test_split
 from torch.autograd import Variable
+from sklearn.preprocessing import normalize
 
-MAX_EPOCH = 6000
+MAX_EPOCH = 20000
 
 class Classifier(nn.Module):
     def __init__(self):
         super(Classifier, self).__init__()
-        self.l1 = nn.Linear(7,1)
+        self.l1 = nn.Linear(6,1)
 		
     def forward(self, x):
-        x = F.sigmoid(self.l1(x))
-        return x
+    	x = self.l1(x)
+    	return x
 
 def percentage_correct(pred, labels, threshold = 0.5):
 	correct = 0
@@ -35,7 +36,7 @@ def percentage_correct(pred, labels, threshold = 0.5):
 	return correct/total, correct, total
 		
 ## Importing Data ##
-dataset = pandas.read_csv('kickstarter_data_full.csv', low_memory = False)
+dataset = pandas.read_csv('../data/kickstarter_data_full.csv', low_memory = False)
 data = dataset[[
 	'disable_communication',
 	'country',
@@ -43,23 +44,25 @@ data = dataset[[
 	'staff_pick',
 	'static_usd_rate',
 	'category',
-	'spotlight',
+	# 'spotlight',
 	'SuccessfulBool'
 ]].dropna().reset_index(drop = True)
 
 ## Converting Categorical Columns to Integers and Bools to 0/1 ##
 data['disable_communication'] = (data['disable_communication']).astype(int)
 data['staff_pick'] = (data['staff_pick']).astype(int)
-data['spotlight'] = (data['spotlight']).astype(int)
+# data['spotlight'] = (data['spotlight']).astype(int)
 data['country'] = (data['country']).astype('category').cat.codes
 data['currency'] = (data['currency']).astype('category').cat.codes
 data['category'] = (data['category']).astype('category').cat.codes
 
 ## Initiallizing Testing and Training Data ##
-Y = data.iloc[0:int(data.size / 8), 7].as_matrix()
-X = data.iloc[0:int(data.size / 8), data.columns != 'SuccessfulBool'].as_matrix()
+Y = data.iloc[0:int(data.size / 7), 6].as_matrix()
+X = data.iloc[0:int(data.size / 7), data.columns != 'SuccessfulBool'].as_matrix()
 
-X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size = 0.2, random_state = 42)
+X_normalized = normalize(X, norm='l2')
+
+X_train, X_test, y_train, y_test = train_test_split(X_normalized, Y, test_size = 0.2, random_state = 42)
 
 X_train = torch.Tensor(X_train)
 X_test = torch.Tensor(X_test)
