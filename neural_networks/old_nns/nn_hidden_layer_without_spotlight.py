@@ -76,6 +76,10 @@ train_labels= Variable(y_train)
 test_data   = Variable(X_test)
 test_labels = Variable(y_test)
 
+print(train_data)
+print("===============")
+print(train_labels)
+
 ## Training the Model ##
 model = Classifier()
 optimizer = torch.optim.RMSprop(model.parameters(), lr = 0.003)
