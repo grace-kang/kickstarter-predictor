@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from sklearn.preprocessing import normalize
 import matplotlib.pyplot as plt
 
-MAX_EPOCH = 5000
+MAX_EPOCH = 1500
 PRED_THRESHOLD = 0.5
 
 def percentage_correct(pred, labels):
@@ -34,13 +34,15 @@ def percentage_correct(pred, labels):
 class Classifier(nn.Module):
     def __init__(self):
         super(Classifier, self).__init__()
-        self.l1 = nn.Linear(6,5)
-        self.l2 = nn.Linear(5,1)
+        self.l1 = nn.Linear(61,11)
+        self.l2 = nn.Linear(11,5)
+        self.l3 = nn.Linear(5,1)
 		
     def forward(self, x):
-    	x = F.relu(self.l1(x))
-    	x = F.sigmoid(self.l2(x))
-    	return x
+        x = F.relu(self.l1(x))
+        x = F.relu(self.l2(x))
+        x = F.sigmoid(self.l3(x))
+        return x
 
 ######
 #   Helper class for interacting with the neural network from other programs.
@@ -49,7 +51,7 @@ class KickstarterNeuralNet:
 
     ######
     #   Takes a given Pandas dataframe, trains the neural network on it and then
-    #   adds the pedictions for all of the data to the dataframe and returns it.
+    #   adds the predictions for all of the data to the dataframe and returns it.
     #
     #   data: A Pandas dataframe containing at least the following column:
     #       -   disable_communication
@@ -79,18 +81,26 @@ class KickstarterNeuralNet:
             'SuccessfulBool'
         ]].reset_index(drop = True)
         
-        # Converting categorical columns to integers and bools to 0/1.
+        # Converting booleans to 0/1.
         self.data_subset['disable_communication'] = (self.data_subset['disable_communication']).astype(int)
         self.data_subset['staff_pick'] = (self.data_subset['staff_pick']).astype(int)
-        self.data_subset['country'] = (self.data_subset['country']).astype('category').cat.codes
-        self.data_subset['currency'] = (self.data_subset['currency']).astype('category').cat.codes
-        self.data_subset['category'] = (self.data_subset['category']).astype('category').cat.codes
+        
+        # Performing one hot encoding for categorical data.
+        country_one_hot = pandas.get_dummies(self.data_subset['country'])
+        currency_one_hot = pandas.get_dummies(self.data_subset['currency'])
+        category_one_hot = pandas.get_dummies(self.data_subset['category'])
+        self.data_subset = self.data_subset.drop('country', axis = 1)
+        self.data_subset = self.data_subset.drop('currency', axis = 1)
+        self.data_subset = self.data_subset.drop('category', axis = 1)
+        self.data_subset = self.data_subset.join(country_one_hot)
+        self.data_subset = self.data_subset.join(currency_one_hot)
+        self.data_subset = self.data_subset.join(category_one_hot)
         
         # Splitting the data from the labels.
-        X = self.data_subset.iloc[0:int(self.data_subset.size / 7), self.data_subset.columns != 'SuccessfulBool'].as_matrix()
-        Y = self.data_subset.iloc[0:int(self.data_subset.size / 7), 6].as_matrix()
+        X = self.data_subset.drop('SuccessfulBool', axis = 1).as_matrix()
+        Y = self.data_subset['SuccessfulBool'].as_matrix()
         
-        # Spliting the data and labels into training and testing subsets.
+        # Splitting the data and labels into training and testing subsets.
         x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size = size_of_test)
         
         # Converting to variables.
@@ -163,8 +173,8 @@ class KickstarterNeuralNet:
     ######
     def get_dataframe(self, save_to_csv = False, file_name = None):
         # Splitting the data from the labels.
-        data = self.data_subset.iloc[0:int(self.data_subset.size / 7), self.data_subset.columns != 'SuccessfulBool'].as_matrix()
-        labels = self.data_subset.iloc[0:int(self.data_subset.size / 7), 6].as_matrix()
+        data = self.data_subset.drop('SuccessfulBool', axis = 1).as_matrix()
+        labels = self.data_subset['SuccessfulBool'].as_matrix()
         
         # Converting to variables.
         data = torch.Tensor(data)
