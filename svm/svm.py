@@ -54,7 +54,7 @@ X_train, X_test, y_train, y_test = train_test_split(X_normalized, Y, test_size =
 
 
 #initialize SVM
-clf = svm.NuSVC()
+clf = svm.NuSVC(kernel='poly')
 clf.fit(X_train, y_train)
 pred = clf.predict(X_test)
 acc, cor, tot = percentage_correct(pred, y_test)
