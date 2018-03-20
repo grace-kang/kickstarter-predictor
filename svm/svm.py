@@ -1,7 +1,6 @@
 import numpy
 import pandas
 import torch
-from torch.autograd import Variable
 from sklearn import svm
 from sklearn.preprocessing import normalize
 from sklearn.model_selection import train_test_split
@@ -53,18 +52,9 @@ X_normalized = normalize(X, norm='l2')
 
 X_train, X_test, y_train, y_test = train_test_split(X_normalized, Y, test_size = 0.2, random_state = 42)
 
-X_train = torch.Tensor(X_train)
-X_test = torch.Tensor(X_test)
-y_train = torch.Tensor(y_train)
-y_test = torch.Tensor(y_test)
-
-train_data  = Variable(X_train)
-train_labels= Variable(y_train)
-test_data   = Variable(X_test)
-test_labels = Variable(y_test)
 
 #initialize SVM
-clf = svm.SVC()
+clf = svm.NuSVC()
 clf.fit(X_train, y_train)
 pred = clf.predict(X_test)
 acc, cor, tot = percentage_correct(pred, y_test)
