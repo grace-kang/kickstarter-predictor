@@ -8,8 +8,11 @@ from torch.autograd import Variable
 from sklearn.preprocessing import normalize
 import matplotlib.pyplot as plt
 
-MAX_EPOCH = 1500
+MAX_EPOCH = 2000
 PRED_THRESHOLD = 0.5
+
+torch.manual_seed(474)
+torch.backends.cudnn.enabled = False
 
 def percentage_correct(pred, labels):
 	correct = 0
@@ -125,7 +128,7 @@ class KickstarterNeuralNet:
         # Initializing the model.
         self.model = Classifier()
         optimizer = torch.optim.RMSprop(self.model.parameters(), lr = 0.003)
-        loss = nn.BCELoss()
+        loss = nn.L1Loss()
 
         # Training the model.
         for epoch in range(MAX_EPOCH):
@@ -143,7 +146,6 @@ class KickstarterNeuralNet:
         # Testing the model.
         self.model.eval()
         pred = self.model(self.test_data).view(len(self.test_labels))
-        #print(pred)
         final_error = loss(pred, self.test_labels)
         final_accuracy, correct, total  = percentage_correct(pred, self.test_labels)
         
@@ -209,4 +211,4 @@ if __name__ == "__main__":
     
     ks_nn.plot_error()
     
-    df = ks_nn.get_dataframe(True, "data_with_nn_predictions.csv")
+    df = ks_nn.get_dataframe(True, "data_with_nn_predictions.csv")    

@@ -25,6 +25,7 @@ def percentage_correct(pred, labels, threshold = 0.5):
 
 ## Importing Data ##
 dataset = pandas.read_csv('../data/kickstarter_data_full.csv', low_memory = False)
+original_data = dataset
 data = dataset[[
 	'disable_communication',
 	'country',
@@ -32,31 +33,41 @@ data = dataset[[
 	'staff_pick',
 	'static_usd_rate',
 	'category',
-	# 'spotlight',
 	'SuccessfulBool'
-]].dropna().reset_index(drop = True)
+]].reset_index(drop = True)
 
-## Converting Categorical Columns to Integers and Bools to 0/1 ##
+# Converting booleans to 0/1.
 data['disable_communication'] = (data['disable_communication']).astype(int)
 data['staff_pick'] = (data['staff_pick']).astype(int)
-# data['spotlight'] = (data['spotlight']).astype(int)
-data['country'] = (data['country']).astype('category').cat.codes
-data['currency'] = (data['currency']).astype('category').cat.codes
-data['category'] = (data['category']).astype('category').cat.codes
 
-## Initiallizing Testing and Training Data ##
-Y = data.iloc[0:int(data.size / 7), 6].as_matrix()
-X = data.iloc[0:int(data.size / 7), data.columns != 'SuccessfulBool'].as_matrix()
+# Performing one hot encoding for categorical data.
+country_one_hot = pandas.get_dummies(data['country'])
+currency_one_hot = pandas.get_dummies(data['currency'])
+category_one_hot = pandas.get_dummies(data['category'])
+data = data.drop('country', axis = 1)
+data = data.drop('currency', axis = 1)
+data = data.drop('category', axis = 1)
+data = data.join(country_one_hot)
+data = data.join(currency_one_hot)
+data = data.join(category_one_hot)
 
-X_normalized = normalize(X, norm='l2')
+X = data.drop('SuccessfulBool', axis = 1).as_matrix()
+Y = data['SuccessfulBool'].as_matrix()
 
-X_train, X_test, y_train, y_test = train_test_split(X_normalized, Y, test_size = 0.2, random_state = 42)
+
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size = 0.2)
 
 
-#initialize SVM
-clf = svm.NuSVC(kernel='poly')
+#initialize SVM and train model
+clf = svm.SVC(C=100, kernel='rbf')
 clf.fit(X_train, y_train)
+clf.score(X_train, y_train)
 pred = clf.predict(X_test)
 acc, cor, tot = percentage_correct(pred, y_test)
 print ('Final Accuracy: {}'.format(acc))
+
+#make predictions for whole dataset for new column
+pred_col = clf.predict(X)
+original_data['svm_prediction'] = pred_col
+#original_data.to_csv('data_with_svm_predictions.csv')
 
