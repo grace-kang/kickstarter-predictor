@@ -19,8 +19,8 @@ import pickle
 nltk.download('stopwords')
 
 if __name__ == '__main__':
-    dataset = pd.read_csv('../data/train_data.csv')
-    data = dataset[['blurb', 'SuccessfulBool']]
+    data_set = pd.read_csv('../data/train_data.csv')
+    data = data_set[['blurb', 'SuccessfulBool']]
     data.dropna(axis=0, inplace=True)
     data.reset_index(drop=True, inplace=True)
 
@@ -37,25 +37,27 @@ if __name__ == '__main__':
         clean_blurbs.append(blurb)
         counter += 1
 
+    data['blurb'] = clean_blurbs
+    fill = 2
     # save clean_blurbs to file
-    with open('clean_blurbs_bag.pickle', 'wb') as f:
-        pickle.dump(clean_blurbs, f)
+    with open('test_clean_blurbs_bag_df.pickle', 'wb') as f:
+        pickle.dump(data, f)
 
     # load saved clean_blurbs
-    # with open('clean_blurbs_bag.pickle', 'rb') as f:
-    #     clean_blurbs = pickle.load(f)
+    # with open('clean_blurbs_bag_df.pickle', 'rb') as f:
+    #     data = pickle.load(f)
 
-    n = len(clean_blurbs)
+    n = len(data)
 
     # CREATE BAG OF WORDS MODEL
     from sklearn.feature_extraction.text import CountVectorizer
 
     cv = CountVectorizer()
-    X = cv.fit_transform(clean_blurbs).toarray()
+    X = cv.fit_transform(data['blurb']).toarray()
     y = data.iloc[0:n, 1].values
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=0)
-
+    fill = 12
     # Run through each classifier, train on X_train and y_train and the test them using the score function
     algs = [
         GaussianNB(),
