@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 # Import Libraries
 import numpy as np
 import pandas as pd
@@ -9,43 +8,42 @@ from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import Perceptron, LogisticRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
 import matplotlib.pyplot as plt
 import re
 import nltk
-
-nltk.download('stopwords')
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 import pickle
+nltk.download('stopwords')
 
 if __name__ == '__main__':
-    dataset = pd.read_csv('kickstarter_data_full.csv')
+    dataset = pd.read_csv('../data/train_data.csv')
     data = dataset[['blurb', 'SuccessfulBool']]
-    after_data = data.dropna(axis=0, how='any')
-    reset_index = after_data.reset_index(drop=True)
+    data.dropna(axis=0, inplace=True)
+    data.reset_index(drop=True, inplace=True)
 
-    #    n = len(reset_index)
-    #    clean_blurbs = []
-    #    counter = 0
-    #    for i in range(0,n):
-    #        blurb = re.sub('[^a-zA-Z]', ' ', reset_index['blurb'][i])
-    #        blurb = blurb.lower()
-    #        blurb = blurb.split()
-    #        ps = PorterStemmer()
-    #        blurb = [ps.stem(word) for word in blurb if not word in set(stopwords.words('english'))]
-    #        blurb = ' '.join(blurb)
-    #        clean_blurbs.append(blurb)
-    #        counter += 1
+    n = len(data)
+    clean_blurbs = []
+    counter = 0
+    for i in range(n):
+        blurb = re.sub('[^a-zA-Z]', ' ', data['blurb'][i])
+        blurb = blurb.lower()
+        blurb = blurb.split()
+        ps = PorterStemmer()
+        blurb = [ps.stem(word) for word in blurb if not word in set(stopwords.words('english'))]
+        blurb = ' '.join(blurb)
+        clean_blurbs.append(blurb)
+        counter += 1
 
     # save clean_blurbs to file
-    #    with open('results/clean_blurbs', 'wb') as f:
-    #        pickle.dump(clean_blurbs, f)
+    with open('clean_blurbs_bag.pickle', 'wb') as f:
+        pickle.dump(clean_blurbs, f)
 
     # load saved clean_blurbs
-    with open('clean_blurbs', 'rb') as f:
-        clean_blurbs = pickle.load(f)
+    # with open('clean_blurbs_bag.pickle', 'rb') as f:
+    #     clean_blurbs = pickle.load(f)
 
     n = len(clean_blurbs)
 
@@ -54,9 +52,9 @@ if __name__ == '__main__':
 
     cv = CountVectorizer()
     X = cv.fit_transform(clean_blurbs).toarray()
-    y = reset_index.iloc[0:n, 1].values
+    y = data.iloc[0:n, 1].values
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=0)
 
     # Run through each classifier, train on X_train and y_train and the test them using the score function
     algs = [
@@ -67,7 +65,7 @@ if __name__ == '__main__':
         SGDClassifier()
     ]
 
-    with open('results/blurb_accuracy.txt', 'w') as f:
+    with open('results/blurb_accuracy_bag.txt', 'w') as f:
         for alg in algs:
             print(f"training {type(alg).__name__}")
             alg = alg.fit(X_train, y_train)
