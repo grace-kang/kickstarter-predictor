@@ -8,7 +8,7 @@ from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 import pickle
 
 if __name__ == '__main__':
-    dataset = pd.read_csv('../data/train_data.csv')
+    dataset = pd.read_csv('../data/test_data.csv')
     data = dataset[['blurb', 'SuccessfulBool']]
     data.dropna(axis=0, inplace=True)
     data.reset_index(drop=True, inplace=True)
@@ -33,13 +33,12 @@ if __name__ == '__main__':
     # new = alg.predict_proba(train_X)
 
     test_clean_blurbs = test_df['blurb'].values
-    cv2 = CountVectorizer()
-    test_X = cv2.fit_transform(test_clean_blurbs)
+    test_X = cv.transform(test_clean_blurbs)
 
     predictions = alg.predict_proba(test_X)
     pred_success = predictions[:, 1]
     updated_df = dataset
     updated_df['Probability_of_Success_from_Blurb'] = pred_success
-    updated_df.to_csv('../data/test_data_updated.csv')
+    updated_df.to_csv('../data/test_data.csv')
 
     fill = 2

@@ -19,7 +19,7 @@ import pickle
 nltk.download('stopwords')
 
 if __name__ == '__main__':
-    data_set = pd.read_csv('../data/train_data.csv')
+    data_set = pd.read_csv('../data/test_data.csv')
     data = data_set[['blurb', 'SuccessfulBool']]
     data.dropna(axis=0, inplace=True)
     data.reset_index(drop=True, inplace=True)
