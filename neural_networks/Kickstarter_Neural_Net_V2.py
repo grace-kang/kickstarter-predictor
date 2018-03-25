@@ -1,3 +1,4 @@
+import sys
 import numpy
 import pandas
 import torch
@@ -8,28 +9,22 @@ from torch.autograd import Variable
 from sklearn.preprocessing import normalize
 import matplotlib.pyplot as plt
 
-MAX_EPOCH = 2000
+MAX_EPOCH = 150
 PRED_THRESHOLD = 0.5
 
 torch.manual_seed(474)
 torch.backends.cudnn.enabled = False
 
-def percentage_correct(pred, labels):
-	correct = 0
-	total = 0
-	converted_pred = []
-	for p in pred:
-		if (p.data[0] > PRED_THRESHOLD):
-			converted_pred.append(1)
-		else:
-			converted_pred.append(0)
-            
-	if (len(converted_pred) == len(labels)):
-		for i in range(len(converted_pred)):
-			if (converted_pred[i] == labels[i].data[0]):
-				correct += 1
-			total += 1
-	return correct/total, correct, total
+def accuracy_calc(pred, labels):
+    correct = 0
+    total = 0
+    for i in range(len(pred)):
+        if (pred[i].data[0] > PRED_THRESHOLD and labels[i].data[0] == 1):
+            correct += 1
+        elif (pred[i].data[0] <= PRED_THRESHOLD and labels[i].data[0] == 0):
+            correct += 1
+        total += 1
+    return correct/total, correct, total
 
 ######
 #   Architecture of the neural network.
@@ -140,11 +135,15 @@ class KickstarterNeuralNet:
     
         # Initializing the model.
         self.model = Classifier()
-        optimizer = torch.optim.RMSprop(self.model.parameters(), lr = 0.003)
+        optimizer = torch.optim.RMSprop(self.model.parameters(), lr = 0.009)
         loss = nn.L1Loss()
 
         # Training the model.
         for epoch in range(MAX_EPOCH):
+            if (epoch % 5) == 0:
+                sys.stdout.write("EPOCH: %d    \r" % (epoch) )
+                sys.stdout.flush()
+        
             self.model.train()
             optimizer.zero_grad()
             pred = self.model(self.train_data).view(len(self.train_labels))
@@ -155,14 +154,14 @@ class KickstarterNeuralNet:
             self.model.eval()
             pred = self.model(self.test_data).view(len(self.test_labels))
             self.error_data.append(loss(pred, self.test_labels).data[0])
-            #accuracy, correct, total  = percentage_correct(pred, self.test_labels)
-            #self.accuracy_data.append(accuracy)
+            accuracy, correct, total  = accuracy_calc(pred, self.test_labels)
+            self.accuracy_data.append(accuracy)
             
         # Testing the model.
         self.model.eval()
         pred = self.model(self.test_data).view(len(self.test_labels))
         final_error = loss(pred, self.test_labels)
-        final_accuracy, correct, total  = percentage_correct(pred, self.test_labels)
+        final_accuracy, correct, total  = accuracy_calc(pred, self.test_labels)
         
         return final_accuracy, final_error.data[0]
     
@@ -184,6 +183,17 @@ class KickstarterNeuralNet:
         plt.title("% Accuracy per Epoch")
         plt.xlabel("Epochs")
         plt.ylabel("% Accuracy")
+        plt.show()
+       
+    ######
+    #   Plots the accuracy and error per epoch from when the model was training.
+    ######
+    def plot_accuracy_and_error(self):
+        plt.plot(self.accuracy_data)
+        plt.plot(self.error_data)
+        plt.title("Accuracy and Error per Epoch")
+        plt.xlabel("Epochs")
+        plt.ylabel("%")
         plt.show()
         
     ######
@@ -228,6 +238,7 @@ if __name__ == "__main__":
     print(numpy.around(final_error, 3))
     
     ks_nn.plot_error()
-    #ks_nn.plot_accuracy()
+    ks_nn.plot_accuracy()
+    ks_nn.plot_accuracy_and_error()
     
-    df = ks_nn.get_dataframe(True, "test_data_with_nn_predictions.csv")    
+    #df = ks_nn.get_dataframe(True, "test_data_with_nn_predictions.csv")    
